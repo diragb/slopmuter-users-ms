@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      APP_BASE_URL: ${APP_BASE_URL}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
