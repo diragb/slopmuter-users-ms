@@ -1,10 +1,13 @@
 // Packages:
 import app from './app'
 import { closeDatabasePool, verifyDatabaseConnection } from './config/db'
+import { startSqsConsumers } from './modules/sqs/sqs-consumer'
 
 // Constants:
 import { env } from './config/env'
 import logger from './lib/logger'
+
+// Modules:
 
 // Functions:
 const startServer = async (): Promise<void> => {
@@ -14,6 +17,7 @@ const startServer = async (): Promise<void> => {
 
   const server = app.listen(env.port, () => {
     logger.info(`${env.serviceName} is running on http://localhost:${env.port}`)
+    startSqsConsumers()
   })
 
   const shutdown = (signal: string): void => {

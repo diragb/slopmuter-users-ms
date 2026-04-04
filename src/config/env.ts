@@ -22,6 +22,11 @@ const envSchema = z.object({
   ALLOWED_ORIGINS: z
     .string()
     .default('chrome-extension://mcihoalbpibkcngfpohfolldkicapgcj,https://slopmuter.com,http://localhost:3000'),
+
+  SQS_ACCOUNT_MUTED_QUEUE_URL: z.string(),
+  SQS_APPEAL_RESOLVED_QUEUE_URL: z.string(),
+  SQS_SUBSCRIPTION_CHANGED_QUEUE_URL: z.string(),
+  AWS_REGION: z.string().default('us-east-1'),
 })
 
 const parsedEnv = envSchema.safeParse(process.env)
@@ -45,4 +50,8 @@ export const env = {
   allowedOrigins: rawEnv.ALLOWED_ORIGINS.split(',')
     .map(origin => origin.trim())
     .filter(Boolean),
+  sqsAccountMutedQueueUrl: rawEnv.SQS_ACCOUNT_MUTED_QUEUE_URL,
+  sqsAppealResolvedQueueUrl: rawEnv.SQS_APPEAL_RESOLVED_QUEUE_URL,
+  sqsSubscriptionChangedQueueUrl: rawEnv.SQS_SUBSCRIPTION_CHANGED_QUEUE_URL,
+  awsRegion: rawEnv.AWS_REGION,
 }

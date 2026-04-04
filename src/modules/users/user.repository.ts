@@ -16,11 +16,11 @@ type UpdateUserProfileInput = Pick<UserProfile, 'name' | 'twitterUsername'>
  */
 const mapUserProfileRow = (row: QueryResultRow): UserProfile => {
   return {
-    id: row['id'],
-    email: row['email'],
-    name: row['name'],
-    avatarUrl: row['avatarUrl'],
-    twitterUsername: row['twitterUsername'],
+    id: Number(row['id']),
+    email: String(row['email']),
+    name: String(row['name']),
+    avatarUrl: String(row['avatarUrl']),
+    twitterUsername: String(row['twitterUsername']),
     subscriptionTier: row['subscriptionTier'],
   }
 }
@@ -136,6 +136,34 @@ const touchLastActive = async (userId: number): Promise<void> => {
   )
 }
 
+/**
+ * Updates a user's subscription tier (e.g. from Payments / subscription.changed SQS).
+ *
+ * @param userId - Internal user ID.
+ * @param tier - New subscription tier.
+ * @returns Number of rows updated (0 if user does not exist).
+ */
+const updateSubscriptionTier = async (userId: number, tier: SubscriptionTier): Promise<number> => {
+  const result = await pool.query(
+    `
+      UPDATE users
+      SET
+        subscription_tier = $2,
+        updated_at = NOW()
+      WHERE id = $1
+    `,
+    [userId, tier],
+  )
+  return result.rowCount ?? 0
+}
+
 // Exports:
-export { findUserProfileByUserId, findUserSubscriptionTierByUserId, updateUserProfile, deleteUser, touchLastActive }
+export {
+  findUserProfileByUserId,
+  findUserSubscriptionTierByUserId,
+  updateUserProfile,
+  deleteUser,
+  touchLastActive,
+  updateSubscriptionTier,
+}
 export type { UpdateUserProfileInput }

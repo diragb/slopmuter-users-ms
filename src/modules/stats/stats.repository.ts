@@ -18,7 +18,7 @@ const mapUserStatsRow = (row: QueryResultRow): UserStats => {
   const accuracy = accountsReported > 0 ? successful / accountsReported : null
 
   return {
-    id: row['id'],
+    id: Number(row['id']),
     accountsReportedCount: accountsReported,
     successfulReportsCount: successful,
     reputationPoints: Number(row['reputationPoints']),
