@@ -8,6 +8,7 @@ import type { UserPreferences } from '../../types'
 interface UpsertUserPreferencesInput {
   categoryMask: number
   muteOnTwitterDefault?: boolean
+  notifyOnReportMutedTarget?: boolean
 }
 
 // Functions:
@@ -22,6 +23,8 @@ const mapUserPreferencesRow = (row: QueryResultRow): UserPreferences => {
   return {
     categoryMask: String(row['categoryMask']),
     muteOnTwitterDefault: Boolean(row['muteOnTwitterDefault']),
+    notifyOnReportMutedTarget:
+      row['notifyOnReportMutedTarget'] === undefined ? true : Boolean(row['notifyOnReportMutedTarget']),
     updatedAt: updatedAt instanceof Date ? updatedAt.toISOString() : String(updatedAt),
   }
 }
@@ -38,6 +41,7 @@ const findPreferencesByUserId = async (userId: number): Promise<UserPreferences 
       SELECT
         category_mask::text AS "categoryMask",
         mute_on_twitter_default AS "muteOnTwitterDefault",
+        notify_on_report_muted_target AS "notifyOnReportMutedTarget",
         updated_at AS "updatedAt"
       FROM user_preferences
       WHERE user_id = $1
@@ -58,16 +62,18 @@ const findPreferencesByUserId = async (userId: number): Promise<UserPreferences 
  * @param data - The preferences to save (categoryMask and optional muteOnTwitterDefault).
  */
 const upsertPreferences = async (userId: number, data: UpsertUserPreferencesInput): Promise<void> => {
+  const notifyParam = data.notifyOnReportMutedTarget !== undefined ? data.notifyOnReportMutedTarget : null
   await pool.query(
     `
-      INSERT INTO user_preferences (user_id, category_mask, mute_on_twitter_default, updated_at)
-      VALUES ($1, $2, COALESCE($3, TRUE), NOW())
+      INSERT INTO user_preferences (user_id, category_mask, mute_on_twitter_default, notify_on_report_muted_target, updated_at)
+      VALUES ($1, $2, COALESCE($3, TRUE), COALESCE($4, TRUE), NOW())
       ON CONFLICT (user_id) DO UPDATE SET
         category_mask = EXCLUDED.category_mask,
         mute_on_twitter_default = COALESCE(EXCLUDED.mute_on_twitter_default, user_preferences.mute_on_twitter_default),
+        notify_on_report_muted_target = COALESCE($4::boolean, user_preferences.notify_on_report_muted_target),
         updated_at = NOW()
     `,
-    [userId, data.categoryMask, data.muteOnTwitterDefault ?? null],
+    [userId, data.categoryMask, data.muteOnTwitterDefault ?? null, notifyParam],
   )
 }
 

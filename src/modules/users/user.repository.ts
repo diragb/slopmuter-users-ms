@@ -120,6 +120,31 @@ const deleteUser = async (userId: number): Promise<void> => {
 }
 
 /**
+ * Finds emails for reporter users who have opted in to receive notifications
+ * when a report target is muted. Users without a row in `user_preferences`
+ * are treated as opted in by default (using COALESCE).
+ *
+ * @param {number[]} reporterUserIds - An array of internal user IDs for reporters.
+ * @returns {Promise<Array<{ email: string }>>} - A promise that resolves to an array of objects containing the email addresses of opted-in reporters.
+ */
+const findReporterEmailsOptedInForMutedTargetNotification = async (
+  reporterUserIds: number[],
+): Promise<Array<{ email: string }>> => {
+  if (reporterUserIds.length === 0) return []
+  const result = await pool.query<{ email: string }>(
+    `
+      SELECT u.email AS "email"
+      FROM users u
+      LEFT JOIN user_preferences p ON p.user_id = u.id
+      WHERE u.id = ANY($1::int[])
+        AND COALESCE(p.notify_on_report_muted_target, TRUE) = TRUE
+    `,
+    [reporterUserIds],
+  )
+  return result.rows
+}
+
+/**
  * Updates the user's last active timestamp to the current time.
  *
  * @param userId - The internal user ID to touch.
@@ -165,5 +190,6 @@ export {
   deleteUser,
   touchLastActive,
   updateSubscriptionTier,
+  findReporterEmailsOptedInForMutedTargetNotification,
 }
 export type { UpdateUserProfileInput }

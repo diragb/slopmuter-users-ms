@@ -27,6 +27,11 @@ const envSchema = z.object({
   SQS_APPEAL_RESOLVED_QUEUE_URL: z.string(),
   SQS_SUBSCRIPTION_CHANGED_QUEUE_URL: z.string(),
   AWS_REGION: z.string().default('us-east-1'),
+
+  SES_FROM_EMAIL: z.string().optional().default(''),
+  SES_REGION: z.string().optional().default(''),
+
+  INTERNAL_EMAIL_SECRET: z.string().optional().default(''),
 })
 
 const parsedEnv = envSchema.safeParse(process.env)
@@ -54,4 +59,7 @@ export const env = {
   sqsAppealResolvedQueueUrl: rawEnv.SQS_APPEAL_RESOLVED_QUEUE_URL,
   sqsSubscriptionChangedQueueUrl: rawEnv.SQS_SUBSCRIPTION_CHANGED_QUEUE_URL,
   awsRegion: rawEnv.AWS_REGION,
+  sesFromEmail: rawEnv.SES_FROM_EMAIL.trim(),
+  sesRegion: rawEnv.SES_REGION.trim() || rawEnv.AWS_REGION,
+  internalEmailSecret: rawEnv.INTERNAL_EMAIL_SECRET,
 }

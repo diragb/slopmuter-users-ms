@@ -4,6 +4,7 @@ import {
   findUserProfileByUserId,
   updateUserProfile as updateUserProfileRepository,
 } from './user.repository'
+import { sendAccountDeletionConfirmationEmail } from '../email/email.service'
 import { NotFoundError } from '../../lib/errors'
 import { findPreferencesByUserId } from '../preferences/preferences.repository'
 
@@ -53,8 +54,12 @@ const exportUserData = async (userId: number) => {
 }
 
 const deleteAccount = async (userId: number) => {
+  const userProfile = await findUserProfileByUserId(userId)
+  if (userProfile) {
+    await sendAccountDeletionConfirmationEmail({ to: userProfile.email, name: userProfile.name })
+  }
   await deleteUser(userId)
-  // TODO: cancel Stripe subscription, anonymize reports, send confirmation email.
+  // TODO: cancel Stripe subscription, anonymize reports.
 }
 
 // Exports:

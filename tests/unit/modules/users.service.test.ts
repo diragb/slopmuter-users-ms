@@ -1,11 +1,17 @@
 // Packages:
 import { vi } from 'vitest'
+
+vi.mock('../../../src/modules/email/email.service', () => ({
+  sendAccountDeletionConfirmationEmail: vi.fn().mockResolvedValue(undefined),
+}))
+
 import {
   getUserFullProfile,
   updateUserProfile,
   exportUserData,
   deleteAccount,
 } from '../../../src/modules/users/users.service'
+import { sendAccountDeletionConfirmationEmail } from '../../../src/modules/email/email.service'
 import { NotFoundError } from '../../../src/lib/errors'
 import {
   deleteUser,
@@ -20,6 +26,7 @@ const mockFindUserProfile = vi.mocked(findUserProfileByUserId)
 const mockFindPreferences = vi.mocked(findPreferencesByUserId)
 const mockUpdateUserProfileRepository = vi.mocked(updateUserProfileRepository)
 const mockDeleteUser = vi.mocked(deleteUser)
+const mockSendDeletionEmail = vi.mocked(sendAccountDeletionConfirmationEmail)
 
 vi.mock('../../../src/modules/users/user.repository', () => ({
   deleteUser: vi.fn(),
@@ -54,6 +61,7 @@ describe('users.service', () => {
       mockFindPreferences.mockResolvedValue({
         categoryMask: '7',
         muteOnTwitterDefault: false,
+        notifyOnReportMutedTarget: true,
         updatedAt: '2026-01-01T00:00:00.000Z',
       })
 
@@ -80,6 +88,7 @@ describe('users.service', () => {
         id: 1,
         categoryMask: '0',
         muteOnTwitterDefault: true,
+        notifyOnReportMutedTarget: true,
       })
       expect(result.updatedAt).toBeUndefined()
     })
@@ -119,6 +128,7 @@ describe('users.service', () => {
       mockFindPreferences.mockResolvedValue({
         categoryMask: '3',
         muteOnTwitterDefault: true,
+        notifyOnReportMutedTarget: true,
         updatedAt: '2026-01-02T00:00:00.000Z',
       })
 
@@ -128,6 +138,7 @@ describe('users.service', () => {
       expect(result.preferences).toMatchObject({
         categoryMask: '3',
         muteOnTwitterDefault: true,
+        notifyOnReportMutedTarget: true,
       })
       expect(result.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     })
@@ -140,11 +151,16 @@ describe('users.service', () => {
   })
 
   describe('deleteAccount', () => {
-    it('calls deleteUser repository function', async () => {
+    it('sends confirmation email then deletes user', async () => {
+      mockFindUserProfile.mockResolvedValue(sampleProfile)
       mockDeleteUser.mockResolvedValue(undefined)
 
       await deleteAccount(42)
 
+      expect(mockSendDeletionEmail).toHaveBeenCalledWith({
+        to: sampleProfile.email,
+        name: sampleProfile.name,
+      })
       expect(mockDeleteUser).toHaveBeenCalledWith(42)
     })
   })

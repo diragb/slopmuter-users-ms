@@ -2,8 +2,9 @@
 import { DeleteMessageCommand, ReceiveMessageCommand, type Message } from '@aws-sdk/client-sqs'
 import logger from '../../lib/logger'
 import { sqsClient } from '../../lib/sqs'
+import { sendAppealStatusUpdateEmail, sendReportMutedTargetEmail } from '../email/email.service'
 import { awardReputationToReporters, incrementSuccessfulReports } from '../reputation/reputation.repository'
-import { updateSubscriptionTier } from '../users/user.repository'
+import { findReporterEmailsOptedInForMutedTargetNotification, updateSubscriptionTier } from '../users/user.repository'
 
 // Constants:
 import { env } from '../../config/env'
@@ -63,6 +64,13 @@ const startAccountMutedConsumer = async (): Promise<void> => {
         await awardReputationToReporters(event.reporterUserIds, 5)
         await incrementSuccessfulReports(event.reporterUserIds)
 
+        const reporterEmails = await findReporterEmailsOptedInForMutedTargetNotification(event.reporterUserIds)
+        await Promise.all(
+          reporterEmails.map(({ email }) =>
+            sendReportMutedTargetEmail({ to: email, targetUsername: event.targetUsername }),
+          ),
+        )
+
         logger.info(
           {
             correlationId,
@@ -120,7 +128,11 @@ const startAppealResolvedConsumer = async (): Promise<void> => {
         }
 
         const event = parsed as unknown as AppealResolvedEvent
-        // TODO: send appeal-status-update email via SES (see modules/email)
+        await sendAppealStatusUpdateEmail({
+          to: event.appellantEmail,
+          status: event.status,
+          appealId: event.appealId,
+        })
         logger.info(
           {
             correlationId,
@@ -129,7 +141,7 @@ const startAppealResolvedConsumer = async (): Promise<void> => {
             status: event.status,
             appellantEmail: event.appellantEmail,
           },
-          'Processed appeal.resolved (SES email pending)',
+          'Processed appeal.resolved',
         )
 
         await sqsClient.send(

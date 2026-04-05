@@ -154,6 +154,7 @@ describe('users routes', () => {
     expect(res.body.preferences).toMatchObject({
       categoryMask: '0',
       muteOnTwitterDefault: true,
+      notifyOnReportMutedTarget: true,
     })
     expect(res.body.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
   })

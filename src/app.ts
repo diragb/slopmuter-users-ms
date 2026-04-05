@@ -14,6 +14,7 @@ import type { Application } from 'express'
 import { env } from './config/env'
 
 // Routers:
+import internalEmailRouter from './modules/email/internal-email.routes'
 import healthRouter from './modules/heatlh/health.routes'
 import usersRouter from './modules/users/users.routes'
 
@@ -34,6 +35,9 @@ app.use(globalLimiter)
 
 app.use('/v1/health', healthRouter)
 app.use('/v1/users', usersRouter)
+if (env.internalEmailSecret) {
+  app.use('/v1/internal/email', internalEmailRouter)
+}
 
 app.use(notFoundHandler)
 app.use(errorHandler)

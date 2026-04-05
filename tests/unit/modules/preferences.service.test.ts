@@ -29,9 +29,9 @@ beforeEach(() => {
 })
 
 const savedPrefs = {
-  id: 1,
   categoryMask: '7',
   muteOnTwitterDefault: true,
+  notifyOnReportMutedTarget: true,
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
 
@@ -50,7 +50,11 @@ describe('preferences.service', () => {
 
       const result = await getPreferences(1)
 
-      expect(result).toEqual({ categoryMask: '0', muteOnTwitterDefault: true })
+      expect(result).toEqual({
+        categoryMask: '0',
+        muteOnTwitterDefault: true,
+        notifyOnReportMutedTarget: true,
+      })
     })
   })
 

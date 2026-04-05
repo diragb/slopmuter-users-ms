@@ -26,6 +26,7 @@ export interface UserStats {
 export interface UserPreferences {
   categoryMask: string // BIGINT comes back as string from pg
   muteOnTwitterDefault: boolean
+  notifyOnReportMutedTarget: boolean
   updatedAt: string
 }
 
