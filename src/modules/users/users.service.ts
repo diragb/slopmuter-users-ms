@@ -4,8 +4,14 @@ import {
   findUserProfileByUserId,
   updateUserProfile as updateUserProfileRepository,
 } from './user.repository'
+import {
+  anonymizeReportsForReporterUserId,
+  revokeAllRefreshTokensForUser,
+} from '../account-deletion/account-deletion.repository'
+import { cancelSubscriptionsForUser } from '../account-deletion/payments-cancel.service'
 import { sendAccountDeletionConfirmationEmail } from '../email/email.service'
 import { NotFoundError } from '../../lib/errors'
+import logger from '../../lib/logger'
 import { findPreferencesByUserId } from '../preferences/preferences.repository'
 
 // Constants:
@@ -55,11 +61,21 @@ const exportUserData = async (userId: number) => {
 
 const deleteAccount = async (userId: number) => {
   const userProfile = await findUserProfileByUserId(userId)
+
+  await cancelSubscriptionsForUser(userId)
+
   if (userProfile) {
     await sendAccountDeletionConfirmationEmail({ to: userProfile.email, name: userProfile.name })
   }
+
+  const reportsAnonymized = await anonymizeReportsForReporterUserId(userId)
+  const tokensRevoked = await revokeAllRefreshTokensForUser(userId)
+  logger.info(
+    { userId, reportsAnonymized, tokensRevoked },
+    'Account deletion: anonymized reports and revoked refresh tokens',
+  )
+
   await deleteUser(userId)
-  // TODO: cancel Stripe subscription, anonymize reports.
 }
 
 // Exports:

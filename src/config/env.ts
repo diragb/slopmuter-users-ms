@@ -32,6 +32,16 @@ const envSchema = z.object({
   SES_REGION: z.string().optional().default(''),
 
   INTERNAL_EMAIL_SECRET: z.string().optional().default(''),
+
+  REPORT_THRESHOLD_COUNT: z.coerce.number().int().positive().default(50),
+  REPORT_THRESHOLD_REP: z.coerce.number().int().positive().default(500),
+  VELOCITY_CHECK_THRESHOLD: z.coerce.number().int().positive().default(30),
+  VELOCITY_CHECK_WINDOW_HOURS: z.coerce.number().int().positive().default(1),
+
+  DAILY_CRON_HEARTBEAT_URL: z.string().optional().default(''),
+
+  PAYMENTS_SERVICE_BASE_URL: z.string().optional().default(''),
+  PAYMENTS_INTERNAL_SECRET: z.string().optional().default(''),
 })
 
 const parsedEnv = envSchema.safeParse(process.env)
@@ -62,4 +72,11 @@ export const env = {
   sesFromEmail: rawEnv.SES_FROM_EMAIL.trim(),
   sesRegion: rawEnv.SES_REGION.trim() || rawEnv.AWS_REGION,
   internalEmailSecret: rawEnv.INTERNAL_EMAIL_SECRET,
+  reportThresholdCount: rawEnv.REPORT_THRESHOLD_COUNT,
+  reportThresholdRep: rawEnv.REPORT_THRESHOLD_REP,
+  velocityCheckThreshold: rawEnv.VELOCITY_CHECK_THRESHOLD,
+  velocityCheckWindowHours: rawEnv.VELOCITY_CHECK_WINDOW_HOURS,
+  dailyCronHeartbeatUrl: rawEnv.DAILY_CRON_HEARTBEAT_URL.trim(),
+  paymentsServiceBaseUrl: rawEnv.PAYMENTS_SERVICE_BASE_URL.trim(),
+  paymentsInternalSecret: rawEnv.PAYMENTS_INTERNAL_SECRET,
 }

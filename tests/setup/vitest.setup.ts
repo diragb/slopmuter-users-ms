@@ -7,3 +7,12 @@ process.env['SQS_ACCOUNT_MUTED_QUEUE_URL'] = 'https://sqs.us-east-1.amazonaws.co
 process.env['SQS_APPEAL_RESOLVED_QUEUE_URL'] = 'https://sqs.us-east-1.amazonaws.com/000000000000/test-appeal-resolved'
 process.env['SQS_SUBSCRIPTION_CHANGED_QUEUE_URL'] =
   'https://sqs.us-east-1.amazonaws.com/000000000000/test-subscription-changed'
+
+process.env['REPORT_THRESHOLD_COUNT'] = '50'
+process.env['REPORT_THRESHOLD_REP'] = '500'
+process.env['VELOCITY_CHECK_THRESHOLD'] = '30'
+process.env['VELOCITY_CHECK_WINDOW_HOURS'] = '1'
+process.env['DAILY_CRON_HEARTBEAT_URL'] = ''
+
+process.env['PAYMENTS_SERVICE_BASE_URL'] = ''
+process.env['PAYMENTS_INTERNAL_SECRET'] = ''

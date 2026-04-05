@@ -5,12 +5,26 @@ vi.mock('../../../src/modules/email/email.service', () => ({
   sendAccountDeletionConfirmationEmail: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('../../../src/modules/account-deletion/account-deletion.repository', () => ({
+  anonymizeReportsForReporterUserId: vi.fn().mockResolvedValue(0),
+  revokeAllRefreshTokensForUser: vi.fn().mockResolvedValue(0),
+}))
+
+vi.mock('../../../src/modules/account-deletion/payments-cancel.service', () => ({
+  cancelSubscriptionsForUser: vi.fn().mockResolvedValue(undefined),
+}))
+
 import {
   getUserFullProfile,
   updateUserProfile,
   exportUserData,
   deleteAccount,
 } from '../../../src/modules/users/users.service'
+import {
+  anonymizeReportsForReporterUserId,
+  revokeAllRefreshTokensForUser,
+} from '../../../src/modules/account-deletion/account-deletion.repository'
+import { cancelSubscriptionsForUser } from '../../../src/modules/account-deletion/payments-cancel.service'
 import { sendAccountDeletionConfirmationEmail } from '../../../src/modules/email/email.service'
 import { NotFoundError } from '../../../src/lib/errors'
 import {
@@ -27,6 +41,9 @@ const mockFindPreferences = vi.mocked(findPreferencesByUserId)
 const mockUpdateUserProfileRepository = vi.mocked(updateUserProfileRepository)
 const mockDeleteUser = vi.mocked(deleteUser)
 const mockSendDeletionEmail = vi.mocked(sendAccountDeletionConfirmationEmail)
+const mockCancelSubscriptions = vi.mocked(cancelSubscriptionsForUser)
+const mockAnonymizeReports = vi.mocked(anonymizeReportsForReporterUserId)
+const mockRevokeTokens = vi.mocked(revokeAllRefreshTokensForUser)
 
 vi.mock('../../../src/modules/users/user.repository', () => ({
   deleteUser: vi.fn(),
@@ -151,16 +168,21 @@ describe('users.service', () => {
   })
 
   describe('deleteAccount', () => {
-    it('sends confirmation email then deletes user', async () => {
+    it('cancels subscriptions, emails, anonymizes reports, revokes tokens, then deletes user', async () => {
       mockFindUserProfile.mockResolvedValue(sampleProfile)
       mockDeleteUser.mockResolvedValue(undefined)
+      mockAnonymizeReports.mockResolvedValue(2)
+      mockRevokeTokens.mockResolvedValue(1)
 
       await deleteAccount(42)
 
+      expect(mockCancelSubscriptions).toHaveBeenCalledWith(42)
       expect(mockSendDeletionEmail).toHaveBeenCalledWith({
         to: sampleProfile.email,
         name: sampleProfile.name,
       })
+      expect(mockAnonymizeReports).toHaveBeenCalledWith(42)
+      expect(mockRevokeTokens).toHaveBeenCalledWith(42)
       expect(mockDeleteUser).toHaveBeenCalledWith(42)
     })
   })

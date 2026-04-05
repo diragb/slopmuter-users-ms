@@ -2,6 +2,8 @@
 import type { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { AuthenticationError } from '../lib/errors'
+import logger from '../lib/logger'
+import { touchLastActive } from '../modules/users/user.repository'
 
 // Typescript:
 interface AccessTokenPayload {
@@ -31,6 +33,11 @@ export const requireAuth = (req: Request, _res: Response, next: NextFunction): v
 
   req.userId = userId
   req.email = payload.email
+
+  void touchLastActive(userId).catch(err => {
+    logger.error({ err, userId }, 'touchLastActive failed after requireAuth')
+  })
+
   next()
 }
 
