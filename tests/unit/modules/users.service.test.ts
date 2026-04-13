@@ -33,7 +33,8 @@ import {
   updateUserProfile as updateUserProfileRepository,
 } from '../../../src/modules/users/user.repository'
 import { findPreferencesByUserId } from '../../../src/modules/preferences/preferences.repository'
-import { SubscriptionTier } from '../../../src/types'
+import { findReportsByReporterUserId } from '../../../src/modules/report/report.repository'
+import { ReportStatus, SubscriptionTier } from '../../../src/types'
 
 // Mocks:
 const mockFindUserProfile = vi.mocked(findUserProfileByUserId)
@@ -44,6 +45,7 @@ const mockSendDeletionEmail = vi.mocked(sendAccountDeletionConfirmationEmail)
 const mockCancelSubscriptions = vi.mocked(cancelSubscriptionsForUser)
 const mockAnonymizeReports = vi.mocked(anonymizeReportsForReporterUserId)
 const mockRevokeTokens = vi.mocked(revokeAllRefreshTokensForUser)
+const mockFindReportsByReporter = vi.mocked(findReportsByReporterUserId)
 
 vi.mock('../../../src/modules/users/user.repository', () => ({
   deleteUser: vi.fn(),
@@ -55,6 +57,10 @@ vi.mock('../../../src/modules/users/user.repository', () => ({
 vi.mock('../../../src/modules/preferences/preferences.repository', () => ({
   findPreferencesByUserId: vi.fn(),
   upsertPreferences: vi.fn(),
+}))
+
+vi.mock('../../../src/modules/report/report.repository', () => ({
+  findReportsByReporterUserId: vi.fn(),
 }))
 
 // Tests:
@@ -140,7 +146,22 @@ describe('users.service', () => {
   })
 
   describe('exportUserData', () => {
-    it('returns profile, preferences, and exportedAt', async () => {
+    it('returns profile, preferences, reports, and exportedAt', async () => {
+      const sampleReports = [
+        {
+          id: 10,
+          targetUsernameHash: 'hash1',
+          targetUsername: 'target1',
+          reporterUserId: 1,
+          reporterRepAtTime: 10,
+          categoryMask: '1',
+          tweetUrl: 'https://twitter.com/x/status/1',
+          note: null,
+          offenseNumber: 1,
+          status: ReportStatus.PENDING,
+          reportedAt: '2026-01-03T00:00:00.000Z',
+        },
+      ]
       mockFindUserProfile.mockResolvedValue(sampleProfile)
       mockFindPreferences.mockResolvedValue({
         categoryMask: '3',
@@ -148,6 +169,7 @@ describe('users.service', () => {
         notifyOnReportMutedTarget: true,
         updatedAt: '2026-01-02T00:00:00.000Z',
       })
+      mockFindReportsByReporter.mockResolvedValue(sampleReports)
 
       const result = await exportUserData(1)
 
@@ -157,6 +179,8 @@ describe('users.service', () => {
         muteOnTwitterDefault: true,
         notifyOnReportMutedTarget: true,
       })
+      expect(result.reports).toEqual(sampleReports)
+      expect(mockFindReportsByReporter).toHaveBeenCalledWith(1)
       expect(result.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     })
 

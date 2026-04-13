@@ -156,7 +156,44 @@ describe('users routes', () => {
       muteOnTwitterDefault: true,
       notifyOnReportMutedTarget: true,
     })
+    expect(res.body.reports).toEqual([])
     expect(res.body.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+  })
+
+  it('GET /v1/users/me/export includes reports filed by the user', async () => {
+    const pool = getTestPool()
+    if (!pool) throw new Error('Test pool not ready')
+    const { id, email } = await insertTestUser(pool)
+    const token = signTestAccessToken(id, email)
+
+    await pool.query(
+      `
+        INSERT INTO reports (
+          target_username_hash,
+          target_username,
+          reporter_user_id,
+          reporter_rep_at_time,
+          category_mask,
+          tweet_url,
+          offense_number,
+          status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending'::report_status_type)
+      `,
+      ['exporthash001', 'badactor', id, 10, 3, 'https://twitter.com/x/status/999001', 1],
+    )
+
+    const res = await request(app).get('/v1/users/me/export').set('Authorization', `Bearer ${token}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body.reports).toHaveLength(1)
+    expect(res.body.reports[0]).toMatchObject({
+      targetUsername: 'badactor',
+      reporterUserId: id,
+      tweetUrl: 'https://twitter.com/x/status/999001',
+      offenseNumber: 1,
+      status: 'pending',
+    })
   })
 
   it('PUT /v1/users/me/preferences enforces free-tier category limit', async () => {
